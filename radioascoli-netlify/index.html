@@ -468,11 +468,11 @@ nav button.on{color:var(--blue);border-bottom-color:var(--blue)}
 var STREAM = 'https://ice09.fluidstream.net/fluid0909.mp3';
 
 // Feed RSS radioascoli.it tramite proxy CORS pubblico (rss2json converte RSS in JSON)
-var RSS_NEWS   = '/.netlify/functions/feed?type=news';
-var RSS_PODS   = '/.netlify/functions/feed?type=podcast';
+var RSS_NEWS   = '/api/feed?type=news';
+var RSS_PODS   = '/api/feed?type=podcast';
 
 // Proxy CORS alternativo per caricare articoli completi
-var CORS_PROXY = '/.netlify/functions/feed'; // Netlify Function
+var CORS_PROXY = '/api/feed'; // Netlify Function
 
 
 // ── DATI EMBEDDED (fallback quando feed non disponibile) ──────────
@@ -965,7 +965,7 @@ function openPodcastProgram(prog) {
     return;
   }
 
-  fetch('/.netlify/functions/feed?action=podcast&url=' + encodeURIComponent(link))
+  fetch('/api/feed?action=podcast&url=' + encodeURIComponent(link))
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data && data.ok && data.episodes && data.episodes.length > 0) {
