@@ -513,13 +513,7 @@ var cache = { news: null, pods: null };
 //  RSS FETCH
 // ═══════════════════════════════════════
 function fetchRSS(url, cb) {
-  // Google Apps Script a volte richiede un secondo tentativo dopo il redirect
-  function doFetch(attempt) {
-    fetch(url + '&t=' + Date.now(), {
-      redirect: 'follow',
-      mode: 'cors',
-      cache: 'no-cache'
-    })
+  fetch(url, { cache: 'no-cache' })
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
@@ -527,21 +521,11 @@ function fetchRSS(url, cb) {
     .then(function(data) {
       if (data && data.ok && data.items && data.items.length > 0) {
         cb(null, data.items);
-      } else if (attempt < 2) {
-        setTimeout(function(){ doFetch(attempt + 1); }, 1500);
       } else {
-        cb('Proxy non disponibile');
+        cb('Nessun contenuto');
       }
     })
-    .catch(function(e) {
-      if (attempt < 2) {
-        setTimeout(function(){ doFetch(attempt + 1); }, 2000);
-      } else {
-        cb(e.message || 'Errore di rete');
-      }
-    });
-  }
-  doFetch(0);
+    .catch(function(e) { cb(e.message || 'Errore di rete'); });
 }
 
 function parseItem(item) {
@@ -981,7 +965,7 @@ function openPodcastProgram(prog) {
     return;
   }
 
-  fetch(CORS_PROXY + '?action=podcast&url=' + encodeURIComponent(link), {redirect:'follow'})
+  fetch('/.netlify/functions/feed?action=podcast&url=' + encodeURIComponent(link))
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data && data.ok && data.episodes && data.episodes.length > 0) {
