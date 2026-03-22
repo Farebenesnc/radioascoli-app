@@ -1,6 +1,6 @@
 const https = require('https');
 const http = require('http');
-
+ 
 function fetchUrl(url) {
   return new Promise((resolve, reject) => {
     const client = url.startsWith('https') ? https : http;
@@ -18,7 +18,7 @@ function fetchUrl(url) {
     req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
   });
 }
-
+ 
 async function fetchNews() {
   const res = await fetchUrl('https://www.radioascoli.it/wp-json/wp/v2/posts?per_page=20&_embed=true');
   if (res.status !== 200) throw new Error('WP API ' + res.status);
@@ -32,7 +32,7 @@ async function fetchNews() {
     return { title, link: p.link||'', pubDate: p.date||'', description: excerpt.substring(0,300), content, image, categories:[] };
   });
 }
-
+ 
 function fetchPodcastList() {
   return [
     {title:"Il circo-lo del giovedi",description:"Temi al centro dell'arena. Conducono Alberto Vitelli, Armando Giampieri e Tonino Sofia.",image:"https://www.radioascoli.it/wp-content/uploads/2026/01/circolo-giovedi-2.jpg",link:"https://www.radioascoli.it/index.php/tutti-i-podcast/il-circo-lo-del-giovedi/",pubDate:'',content:'',categories:['Podcast']},
@@ -44,7 +44,7 @@ function fetchPodcastList() {
     {title:"Nel nome di Sant'Emidio",description:"Racconti sul Santo Patrono di Ascoli Piceno.",image:"https://www.radioascoli.it/wp-content/uploads/2025/07/emidio-rid.jpg",link:"https://www.radioascoli.it/index.php/tutti-i-podcast/nel-nome-di-santemidio/",pubDate:'',content:'',categories:['Podcast']}
   ];
 }
-
+ 
 async function fetchPodcastEpisodes(pageUrl) {
   const res = await fetchUrl(pageUrl);
   const html = res.body;
@@ -66,7 +66,7 @@ async function fetchPodcastEpisodes(pageUrl) {
   }
   return episodes;
 }
-
+ 
 exports.handler = async (event) => {
   const p = event.queryStringParameters || {};
   const headers = { 'Content-Type':'application/json', 'Access-Control-Allow-Origin':'*', 'Cache-Control':'public, max-age=300' };
@@ -84,4 +84,3 @@ exports.handler = async (event) => {
     return { statusCode:500, headers, body: JSON.stringify({ok:false, error:err.message}) };
   }
 };
-
