@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#29ABE2">
+<link rel="manifest" href="manifest.json">
+<title>Radio Ascoli</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+:root{--blue:#29ABE2;--blue2:#1a8dbf;--bluel:#e8f6fd;--border:#e0e0e0;--bg:#f5f5f5;--t2:#555;--t3:#999}
+
+/* NAV */
+nav{display:flex;background:#fff;border-bottom:3px solid var(--blue);flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+nav button{flex:1;min-width:0;padding:12px 4px 9px;border:none;background:none;cursor:pointer;font-size:9.5px;font-weight:700;color:var(--t3);display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:3px solid transparent;margin-bottom:-3px}
+nav button svg{width:20px;height:20px;stroke-width:1.8;stroke:currentColor;fill:none}
+nav button.on{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* SCREENS */
+.screens{flex:1;overflow:hidden;position:relative}
+.screen{display:none;position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:76px}
+.screen.on{display:block}
+
+/* PLAYER */
+.player{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:3px solid var(--blue);padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 -2px 8px rgba(0,0,0,.1);z-index:50;flex-shrink:0}
+.eq{display:flex;align-items:flex-end;gap:2px;height:20px;flex-shrink:0}
+.eq span{width:3px;border-radius:1px;background:var(--blue);animation:eq .6s ease-in-out infinite}
+.eq span:nth-child(1){height:6px;animation-delay:0s}.eq span:nth-child(2){height:14px;animation-delay:.1s}
+.eq span:nth-child(3){height:10px;animation-delay:.2s}.eq span:nth-child(4){height:18px;animation-delay:.05s}
+.eq span:nth-child(5){height:8px;animation-delay:.15s}
+@keyframes eq{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.25)}}
+.eq.off span{animation:none;opacity:.3;transform:scaleY(.2)}
+.pinfo{flex:1;min-width:0}
+.ptitle{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.psub{font-size:10px;color:var(--t3);margin-top:1px}
+.playbtn{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.playbtn:active{background:var(--blue2);transform:scale(.92)}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--blue),var(--blue2));padding:22px 16px 20px;text-align:center}
+.hero-logo{height:68px;width:auto;max-width:240px;object-fit:contain;margin-bottom:10px;display:block;margin-inline:auto}
+.hero-sub{color:rgba(255,255,255,.85);font-size:13px;margin-bottom:18px}
+.hero-live{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--blue);border:none;border-radius:4px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+.hero-live:active{opacity:.85}
+.ldot{width:8px;height:8px;border-radius:50%;background:var(--blue);animation:blink 1.3s ease-in-out infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* FM BAR */
+.fmbar{background:#fff;border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:7px;overflow-x:auto;white-space:nowrap}
+.fml{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.1em}
+.fmc{font-size:12px;font-weight:600;color:var(--t2);border:1px solid var(--border);border-radius:12px;padding:3px 10px;background:var(--bg)}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.gtile{background:#fff;padding:15px 12px;cursor:pointer;display:flex;align-items:center;gap:9px}
+.gtile:active{background:var(--bluel)}
+.gtile-ico{font-size:24px}
+.gtile-lbl{font-size:14px;font-weight:700}
+.gtile-sub{font-size:11px;color:var(--t3);margin-top:1px}
+
+/* SECTION ROW */
+.sec{display:flex;align-items:center;justify-content:space-between;padding:13px 14px 9px}
+.sec-t{font-size:16px;font-weight:800}
+.sec-l{background:none;border:none;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer}
+
+/* LOADING / ERROR */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:14px;color:var(--t3);font-size:13px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{margin:16px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:16px;text-align:center}
+.error-box .icon{font-size:36px;margin-bottom:8px}
+.error-box p{font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.6}
+.retry-btn{background:var(--blue);color:#fff;border:none;border-radius:4px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer}
+
+/* NEWS CARD */
+.ncard{background:#fff;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin:0 12px 11px;cursor:pointer;transition:box-shadow .15s}
+.ncard:active{box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.ncard-img{width:100%;height:150px;object-fit:cover;display:block;background:var(--bluel)}
+.ncard-ph{width:100%;height:150px;background:linear-gradient(135deg,var(--bluel),#cce9f8);display:flex;align-items:center;justify-content:center;font-size:50px}
+.ncard-body{padding:11px 13px 13px}
+.ncard-cat{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.ncard-date{font-size:11px;color:var(--t3);margin-bottom:4px}
+.ncard-title{font-size:15px;font-weight:700;line-height:1.35;margin-bottom:4px}
+.ncard-exc{font-size:12px;color:var(--t2);line-height:1.55}
+.ncard-more{font-size:12px;font-weight:700;color:var(--blue);margin-top:7px;display:inline-block}
+
+/* NEWS LIST ITEM */
+.ni{display:flex;gap:11px;padding:12px 14px;border-bottom:1px solid var(--border);background:#fff;cursor:pointer}
+.ni:active{background:var(--bluel)}
+.ni-img{width:80px;height:64px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--bluel)}
+.ni-ph{width:80px;height:64px;border-radius:4px;flex-shrink:0;background:var(--bluel);display:flex;align-items:center;justify-content:center;font-size:26px}
+.ni-body{flex:1;min-width:0}
+.ni-date{font-size:10px;color:var(--t3);margin-bottom:2px}
+.ni-title{font-size:13px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ni-exc{font-size:11px;color:var(--t2);margin-top:3px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* PODCAST */
+.pod{background:#fff;border-bottom:1px solid var(--border);display:flex;cursor:pointer}
+.pod:active{background:var(--bluel)}
+.pod-img{width:110px;height:110px;object-fit:cover;flex-shrink:0;background:var(--bluel)}
+.pod-ph{width:110px;height:110px;flex-shrink:0;background:var(--bluel);display:flex;align-items:center;justify-content:center;font-size:42px}
+.pod-body{flex:1;padding:12px 12px 12px 10px}
+.pod-title{font-size:15px;font-weight:700;line-height:1.3;margin-bottom:5px}
+.pod-desc{font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pod-btn{display:inline-flex;align-items:center;gap:5px;background:var(--blue);color:#fff;border:none;border-radius:4px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer}
+.pod-btn:active{background:var(--blue2)}
+
+/* DIRETTA */
+.dir-hero{background:linear-gradient(135deg,var(--blue),var(--blue2));padding:28px 16px 24px;text-align:center;position:relative;overflow:hidden}
+.dir-hero::before{content:"";position:absolute;left:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07)}
+.dir-logo{height:60px;width:auto;max-width:220px;object-fit:contain;margin-bottom:14px;filter:brightness(0) invert(1);display:block;margin-inline:auto;position:relative;z-index:1}
+.dir-air{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.85);margin-bottom:12px}
+.dir-tag{font-size:14px;color:rgba(255,255,255,.8);margin-bottom:20px;position:relative;z-index:1}
+.bigplay{width:78px;height:78px;border-radius:50%;background:#fff;color:var(--blue);border:none;cursor:pointer;font-size:28px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 0 0 12px rgba(255,255,255,.15),0 0 0 24px rgba(255,255,255,.07);margin-bottom:22px;position:relative;z-index:1}
+.bigplay:active{transform:scale(.92)}
+.dir-freqs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:relative;z-index:1}
+.dfc{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:14px;padding:4px 12px;font-size:12px;font-weight:600}
+.dinfo{background:#fff;border:1px solid var(--border);border-radius:6px;margin:12px 14px 0;padding:13px}
+.dinfo-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);margin-bottom:5px}
+.dinfo-b{font-size:13px;color:var(--t2);line-height:1.7}
+.sched-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);padding:14px 14px 8px}
+.sched-item{display:flex;gap:10px;padding:9px 11px;border-radius:4px;margin:0 14px 5px;border:1px solid var(--border);background:var(--bg)}
+.sched-item.cur{border-color:var(--blue);background:var(--bluel)}
+.sched-t{font-size:12px;font-weight:700;min-width:44px;color:var(--t3)}
+.sched-item.cur .sched-t{color:var(--blue)}
+.sched-n{font-size:13px}
+.sched-item.cur .sched-n{font-weight:700}
+
+/* FORM */
+.fhdr{background:linear-gradient(135deg,var(--blue),var(--blue2));padding:20px 16px 18px}
+.fhdr-t{font-size:21px;font-weight:800;color:#fff;margin-bottom:3px}
+.fhdr-s{font-size:13px;color:rgba(255,255,255,.85)}
+.ftabs{display:flex;background:#fff;border-bottom:2px solid var(--border);overflow-x:auto}
+.ftab{flex-shrink:0;padding:11px 13px;background:none;border:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--t3);border-bottom:3px solid transparent;margin-bottom:-2px;text-transform:uppercase}
+.ftab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.fform{display:none;padding:16px 14px 24px}.fform.on{display:block}
+.fintro{background:var(--bluel);border-left:3px solid var(--blue);padding:10px 12px;border-radius:0 4px 4px 0;margin-bottom:16px;font-size:12px;color:var(--t2);line-height:1.6}
+.fintro strong{color:var(--blue)}
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.rq{color:var(--blue)}
+.fi,.fs,.ft{width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:4px;font-size:14px;color:#1a1a1a;background:#fff;outline:none;-webkit-appearance:none;font-family:inherit}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--blue)}
+.fi::placeholder,.ft::placeholder{color:var(--t3)}
+.ft{resize:vertical;min-height:88px;line-height:1.5}
+.fs{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath fill='%23666' d='M6 7L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.fcc{display:flex;flex-direction:column;gap:8px}
+.fci{display:flex;align-items:center;gap:9px;cursor:pointer}
+.fci input{accent-color:var(--blue);width:16px;height:16px}
+.fci span{font-size:13px;color:var(--t2)}
+.fts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fts div{padding:8px 4px;text-align:center;border:1.5px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;background:#fff}
+.fts div.on{border-color:var(--blue);background:var(--bluel);color:var(--blue)}
+.fprivacy{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:13px;font-size:11px;color:var(--t3);line-height:1.6}
+.fsubmit{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:4px;font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.fsubmit:active{background:var(--blue2)}
+.fmsg{display:none;margin-top:11px;padding:11px;border-radius:4px;font-size:13px;font-weight:600;text-align:center}
+.fmsg.ok{display:block;background:#e3f6fd;color:#0277a8;border:1px solid #b3e5f7}
+.fmsg.err{display:block;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.fcnt{text-align:right;font-size:10px;color:var(--t3);margin-top:2px}
+
+/* CONTATTI */
+.chdr{background:linear-gradient(135deg,var(--blue),var(--blue2));padding:20px 16px 18px;text-align:center}
+.chdr img{height:52px;width:auto;filter:brightness(0) invert(1);margin-bottom:8px;display:block;margin-inline:auto}
+.chdr-t{font-size:20px;font-weight:800;color:#fff;margin-bottom:2px}
+.chdr-s{font-size:13px;color:rgba(255,255,255,.85)}
+.cblk{padding:14px;border-bottom:1px solid var(--border);background:#fff}
+.cblk-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--blue);margin-bottom:11px}
+.crow{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px}
+.crow:last-child{margin-bottom:0}
+.cico{font-size:18px;flex-shrink:0;margin-top:1px}
+.crow strong{display:block;font-size:12px;font-weight:700;margin-bottom:1px}
+.crow span,.crow a{font-size:14px;color:var(--t2);display:block;text-decoration:none}
+.crow a{color:var(--blue)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px}
+.scard{display:flex;align-items:center;gap:10px;padding:11px 12px;background:#fff;border:1px solid var(--border);border-radius:4px;text-decoration:none;cursor:pointer}
+.scard:active{border-color:var(--blue);background:var(--bluel)}
+.scard svg{width:20px;height:20px;flex-shrink:0}
+.scard span{font-size:12px;font-weight:700;color:#1a1a1a}
+.cftr{padding:12px 14px;font-size:11px;color:var(--t3);text-align:center;line-height:1.6;border-top:1px solid var(--border)}
+
+/* ═══ READER - pannello articolo dentro l'app ═══ */
+.reader{position:fixed;inset:0;z-index:200;background:#fff;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.reader.on{transform:translateX(0)}
+.rbar{height:52px;background:var(--blue);display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.rback{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rback:active{background:rgba(255,255,255,.35)}
+.rtitle{flex:1;font-size:13px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.r-cover{width:100%;max-height:230px;object-fit:cover;display:block}
+.r-cover-ph{height:180px;background:linear-gradient(135deg,var(--bluel),#cce9f8);display:flex;align-items:center;justify-content:center;font-size:64px}
+.r-content{padding:18px 16px 24px}
+.r-cat{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.r-date{font-size:11px;color:var(--t3);margin-bottom:10px}
+.r-title{font-size:20px;font-weight:800;line-height:1.28;margin-bottom:14px;color:#111}
+.r-body{font-size:15px;color:#333;line-height:1.8}
+.r-body p{margin-bottom:14px}
+.r-body h2,.r-body h3{font-size:17px;font-weight:700;margin:18px 0 8px;color:#111}
+.r-body img{max-width:100%;border-radius:4px;margin:10px 0}
+.r-body a{color:var(--blue);text-decoration:underline}
+.r-body iframe{width:100%!important;max-width:100%!important;border:none!important;border-radius:8px;margin:12px 0;display:block;min-height:166px}
+.r-body .wp-block-embed{margin:12px 0}
+.r-body .wp-block-embed__wrapper{position:relative}
+.r-body > iframe{width:100%!important}
+.r-body ul,.r-body ol{margin:10px 0 10px 20px}
+.r-body li{margin-bottom:6px;line-height:1.6}
+.r-body blockquote{border-left:3px solid var(--blue);padding:10px 14px;background:var(--bluel);border-radius:0 4px 4px 0;margin:14px 0;font-style:italic;color:var(--t2)}
+.r-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px;color:var(--t3);font-size:13px}
+.r-pod-box{background:var(--bluel);border:1px solid #b3e5f7;border-radius:8px;padding:16px;margin-bottom:16px}
+.r-pod-box p{font-size:13px;color:var(--t2);line-height:1.6;font-style:italic}
+.r-pod-play{display:flex;align-items:center;gap:8px;background:var(--blue);color:#fff;border:none;border-radius:4px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;width:100%;justify-content:center}
+.r-pod-play:active{background:var(--blue2)}
+</style>
+</head>
+<body>
+
+<!-- NAV TOP -->
+<nav>
+  <button class="on" data-s="home" onclick="go('home',this)">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+  </button>
+  <button data-s="diretta" onclick="go('diretta',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>Diretta
+  </button>
+  <button data-s="podcast" onclick="go('podcast',this)">
+    <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>Podcast
+  </button>
+  <button data-s="notizie" onclick="go('notizie',this)">
+    <svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="16" y1="13" x2="11" y2="13"/><line x1="16" y1="17" x2="11" y2="17"/></svg>Notizie
+  </button>
+  <button data-s="richieste" onclick="go('richieste',this)">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Richieste
+  </button>
+  <button data-s="contatti" onclick="go('contatti',this)">
+    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.44 2 2 0 0 1 3.6 1.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.5a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Contatti
+  </button>
+</nav>
+
+<!-- SCREENS -->
+<div class="screens">
+
+  <!-- HOME -->
+  <div class="screen on" id="s-home">
+    <div class="hero">
+      <img class="hero-logo" src="logo.jpg" alt="Radio Ascoli"
+           onerror="this.outerHTML='<div style=color:#fff;font-size:22px;font-weight:800;margin-bottom:10px>Radio ASCOLI</div>'">
+      <div class="hero-sub">inBlu &bull; La Voce della Comunita'</div>
+      <button class="hero-live" onclick="play()"><div class="ldot"></div>Ascolta Live</button>
+    </div>
+    <div class="fmbar">
+      <span class="fml">FM</span>
+      <span class="fmc">103.0</span><span class="fmc">103.8</span>
+      <span class="fmc">87.5</span><span class="fmc">98.1</span><span class="fmc">90.1</span>
+    </div>
+    <div class="grid">
+      <div class="gtile" onclick="go('diretta',document.querySelector('[data-s=diretta]'))">
+        <span class="gtile-ico">&#128251;</span><div><div class="gtile-lbl">Diretta</div><div class="gtile-sub">Streaming 24/7</div></div>
+      </div>
+      <div class="gtile" onclick="go('podcast',document.querySelector('[data-s=podcast]'))">
+        <span class="gtile-ico">&#127897;</span><div><div class="gtile-lbl">Podcast</div><div class="gtile-sub">On demand</div></div>
+      </div>
+      <div class="gtile" onclick="go('notizie',document.querySelector('[data-s=notizie]'))">
+        <span class="gtile-ico">&#128240;</span><div><div class="gtile-lbl">Notizie</div><div class="gtile-sub">Dal Piceno</div></div>
+      </div>
+      <div class="gtile" onclick="go('richieste',document.querySelector('[data-s=richieste]'))">
+        <span class="gtile-ico">&#128203;</span><div><div class="gtile-lbl">Richieste</div><div class="gtile-sub">Scrivi alla redazione</div></div>
+      </div>
+    </div>
+    <div class="sec"><span class="sec-t">Ultime Notizie</span><button class="sec-l" onclick="go('notizie',document.querySelector('[data-s=notizie]'))">Vedi tutte &rarr;</button></div>
+    <div id="homeNews"><div class="loading"><div class="spinner"></div>Caricamento notizie...</div></div>
+  </div>
+
+  <!-- DIRETTA -->
+  <div class="screen" id="s-diretta">
+    <div class="dir-hero">
+      <img class="dir-logo" src="logo.jpg" alt="Radio Ascoli" onerror="this.outerHTML='<div style=color:#fff;font-size:22px;font-weight:800;margin-bottom:14px;position:relative;z-index:1>Radio ASCOLI</div>'">
+      <div class="dir-air"><div class="ldot"></div>ON AIR</div>
+      <div class="dir-tag">La Voce della Comunita' &bull; inBlu</div>
+      <button class="bigplay" id="bigplay" onclick="play()">&#9654;</button>
+      <div class="dir-freqs">
+        <span class="dfc">103.0</span><span class="dfc">103.8</span>
+        <span class="dfc">87.5</span><span class="dfc">98.1</span><span class="dfc">90.1</span>
+      </div>
+    </div>
+    <div class="dinfo"><div class="dinfo-t">Redazione &bull; Orario</div><div class="dinfo-b">Lun&ndash;Ven 08:30&ndash;18:00 &bull; Sab 08:30&ndash;13:00<br>Tel. <a href="tel:073625018" style="color:var(--blue);font-weight:700">0736/25.01.82</a></div></div>
+    <div class="dinfo" style="margin-top:8px"><div class="dinfo-t">Informazione</div><div class="dinfo-b">4 GR al giorno &bull; Rassegna Stampa mattutina &bull; <strong>Realt&agrave; Locali</strong> &bull; GR InBlu ogni ora.</div></div>
+    <div class="sched-hdr">Palinsesto di oggi</div>
+    <div id="sched"></div>
+    <div style="height:12px"></div>
+  </div>
+
+  <!-- PODCAST -->
+  <div class="screen" id="s-podcast">
+    <div style="background:#fff;border-bottom:1px solid var(--border);padding:14px">
+      <div style="width:48px;height:3px;background:var(--blue);margin-bottom:10px"></div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:4px">Podcast</div>
+      <div style="font-size:13px;color:var(--t2)">Programmi di Radio Ascoli &mdash; sempre aggiornati</div>
+    </div>
+    <div id="podList"><div class="loading"><div class="spinner"></div>Caricamento podcast...</div></div>
+  </div>
+
+  <!-- NOTIZIE -->
+  <div class="screen" id="s-notizie">
+    <div style="background:#fff;border-bottom:1px solid var(--border);padding:14px">
+      <div style="width:48px;height:3px;background:var(--blue);margin-bottom:10px"></div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:4px">Notizie</div>
+      <div style="font-size:13px;color:var(--t2)">Dal territorio piceno &mdash; sempre aggiornate</div>
+    </div>
+    <div id="newsList"><div class="loading"><div class="spinner"></div>Caricamento notizie...</div></div>
+  </div>
+
+  <!-- RICHIESTE -->
+  <div class="screen" id="s-richieste">
+    <div class="fhdr"><div class="fhdr-t">&#128203; Richieste</div><div class="fhdr-s">Compila il modulo. Risponderemo presto.</div></div>
+    <div class="ftabs">
+      <button class="ftab on" data-f="ascolta">&#127911; Ascoltare</button>
+      <button class="ftab" data-f="pub">&#128226; Pubblicita'</button>
+      <button class="ftab" data-f="altro">&#9993; Altro</button>
+    </div>
+    <div class="fform on" id="f-ascolta">
+      <div class="fintro"><strong>Vorrei ascoltare...</strong> &mdash; Trasmetteremo nell'arco di <strong>1 ora</strong>. Inviata a <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7f0d1a1b1e051610111a3f0d1e1b16101e0c1c10131651160b">[email&#160;protected]</a></strong></div>
+      <div class="fg"><label class="fl">Nome <span class="rq">*</span></label><input class="fi" type="text" id="a_nome" placeholder="Es. Mario"></div>
+      <div class="fg"><label class="fl">Canzone / Artista <span class="rq">*</span></label><input class="fi" type="text" id="a_canz" placeholder="Es. Vasco Rossi - Albachiara"></div>
+      <div class="fg"><label class="fl">Dedica?</label>
+        <div class="fcc">
+          <label class="fci"><input type="radio" name="a_ded" value="si"><span>Si' &mdash; la dedico a qualcuno</span></label>
+          <label class="fci"><input type="radio" name="a_ded" value="no" checked><span>No &mdash; solo per me</span></label>
+        </div>
+      </div>
+      <div id="a_ded_box" style="display:none" class="fg"><label class="fl">A chi?</label><input class="fi" type="text" id="a_dest" placeholder="Nome del destinatario"></div>
+      <div class="fg"><label class="fl">Messaggio (facoltativo)</label><textarea class="ft" id="a_msg" maxlength="250" placeholder="Testo da leggere in onda..." oninput="cc('a_msg','a_dc',250)"></textarea><div class="fcnt" id="a_dc">0/250</div></div>
+      <div class="fprivacy">&#128274; Dati trattati da A&amp;P Media srl. La richiesta sara' inviata via email.</div>
+      <label class="fci" style="margin-bottom:13px"><input type="checkbox" id="a_priv"><span style="font-size:12px">Acconsento alla lettura in onda e accetto la privacy <span class="rq">*</span></span></label>
+      <button class="fsubmit" onclick="sub('ascolta')">Invia Richiesta</button>
+      <div class="fmsg" id="fm-ascolta"></div>
+    </div>
+    <div class="fform" id="f-pub">
+      <div class="fintro"><strong>Vorrei fare pubblicita'</strong> &mdash; Inviata a <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dfbcb0b2b2baadbcb6beb3ba9fadbebbb6b0beacbcb0b3b6f1b6ab">[email&#160;protected]</a></strong></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Nome <span class="rq">*</span></label><input class="fi" type="text" id="p_nome" placeholder="Mario"></div>
+        <div class="fg"><label class="fl">Cognome <span class="rq">*</span></label><input class="fi" type="text" id="p_cog" placeholder="Rossi"></div>
+      </div>
+      <div class="fg"><label class="fl">Azienda <span class="rq">*</span></label><input class="fi" type="text" id="p_az" placeholder="Nome azienda"></div>
+      <div class="fg"><label class="fl">Email <span class="rq">*</span></label><input class="fi" type="email" id="p_email" placeholder="email@azienda.it"></div>
+      <div class="fg"><label class="fl">Telefono <span class="rq">*</span></label><input class="fi" type="tel" id="p_tel" placeholder="0736..."></div>
+      <div class="fg"><label class="fl">Tipo</label>
+        <div class="fcc">
+          <label class="fci"><input type="checkbox" id="p_spot"><span>Spot radiofonico</span></label>
+          <label class="fci"><input type="checkbox" id="p_spon"><span>Sponsorizzazione programma</span></label>
+          <label class="fci"><input type="checkbox" id="p_pub"><span>Pubbliredazionale</span></label>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Preferisco essere contattato <span class="rq">*</span></label>
+        <div class="fcc">
+          <label class="fci"><input type="radio" name="p_pref" value="tel"><span>Telefonicamente</span></label>
+          <label class="fci"><input type="radio" name="p_pref" value="email"><span>Per email</span></label>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Fascia oraria</label>
+        <div class="fts">
+          <div onclick="this.classList.toggle('on')">Mattina<br><small>9-12</small></div>
+          <div onclick="this.classList.toggle('on')">Primo pom.<br><small>12-15</small></div>
+          <div onclick="this.classList.toggle('on')">Pomeriggio<br><small>15-18</small></div>
+        </div>
+      </div>
+      <div class="fprivacy">&#128274; Dati trattati da A&amp;P Media srl. <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ed8e828080889f8e848c8188ad9f8c8984828c9e8e828184c38499">[email&#160;protected]</a></div>
+      <label class="fci" style="margin-bottom:13px"><input type="checkbox" id="p_priv"><span style="font-size:12px">Accetto il trattamento dati <span class="rq">*</span></span></label>
+      <button class="fsubmit" onclick="sub('pub')">Richiedi Preventivo</button>
+      <div class="fmsg" id="fm-pub"></div>
+    </div>
+    <div class="fform" id="f-altro">
+      <div class="fintro"><strong>Altro</strong> &mdash; Segnalazioni, suggerimenti, collaborazioni. Inviata a <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="20524544415a494f4e4560524144494f4153434f4c490e4954">[email&#160;protected]</a></strong></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Nome <span class="rq">*</span></label><input class="fi" type="text" id="o_nome" placeholder="Mario"></div>
+        <div class="fg"><label class="fl">Cognome <span class="rq">*</span></label><input class="fi" type="text" id="o_cog" placeholder="Rossi"></div>
+      </div>
+      <div class="fg"><label class="fl">Email <span class="rq">*</span></label><input class="fi" type="email" id="o_email" placeholder="mario@email.it"></div>
+      <div class="fg"><label class="fl">Tipo <span class="rq">*</span></label>
+        <select class="fs" id="o_tipo">
+          <option value="">Seleziona...</option>
+          <option>Segnalazione notizia</option>
+          <option>Suggerimento / Critica</option>
+          <option>Proposta di collaborazione</option>
+          <option>Informazioni generali</option>
+          <option>Problemi tecnici app</option>
+          <option>Altro</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Messaggio <span class="rq">*</span></label><textarea class="ft" id="o_msg" maxlength="1000" placeholder="Scrivi qui..." oninput="cc('o_msg','o_dc',1000)"></textarea><div class="fcnt" id="o_dc">0/1000</div></div>
+      <div class="fprivacy">&#128274; Dati trattati da A&amp;P Media srl nel rispetto del GDPR.</div>
+      <label class="fci" style="margin-bottom:13px"><input type="checkbox" id="o_priv"><span style="font-size:12px">Accetto la privacy policy <span class="rq">*</span></span></label>
+      <button class="fsubmit" onclick="sub('altro')">Invia Messaggio</button>
+      <div class="fmsg" id="fm-altro"></div>
+    </div>
+  </div>
+
+  <!-- CONTATTI -->
+  <div class="screen" id="s-contatti">
+    <div class="chdr">
+      <img src="logo.jpg" alt="Radio Ascoli" onerror="this.style.display='none'">
+      <div class="chdr-t">Contatti</div>
+      <div class="chdr-s">La Voce della Comunita' &bull; inBlu</div>
+    </div>
+    <div class="cblk">
+      <div class="cblk-t">Redazione</div>
+      <div class="crow"><span class="cico">&#128205;</span><div><strong>Indirizzo</strong><span>Lungo Castellano Sisto V, 56 &mdash; 63100 Ascoli Piceno</span></div></div>
+      <div class="crow"><span class="cico">&#128222;</span><div><strong>Telefono</strong><a href="tel:073625018">0736 / 25.01.82</a></div></div>
+      <div class="crow"><span class="cico">&#9993;</span><div><strong>Email</strong><a href="/cdn-cgi/l/email-protection#8ffdeaebeef5e6e0e1eacffdeeebe6e0eefcece0e3e6a1e6fb"><span class="__cf_email__" data-cfemail="cebcabaaafb4a7a1a0ab8ebcafaaa7a1afbdada1a2a7e0a7ba">[email&#160;protected]</span></a></div></div>
+    </div>
+    <div class="cblk">
+      <div class="cblk-t">Ufficio Commerciale</div>
+      <div class="crow"><span class="cico">&#128222;</span><div><strong>Telefono</strong><a href="tel:073625018">0736 / 25.01.82</a></div></div>
+      <div class="crow"><span class="cico">&#9993;</span><div><strong>Email</strong><a href="/cdn-cgi/l/email-protection#81e2eeecece4f3e2e8e0ede4c1f3e0e5e8eee0f2e2eeede8afe8f5"><span class="__cf_email__" data-cfemail="e98a8684848c9b8a8088858ca99b888d8086889a8a868580c7809d">[email&#160;protected]</span></a></div></div>
+    </div>
+    <div class="cblk">
+      <div class="cblk-t">Frequenze FM</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <span style="background:var(--blue);color:#fff;border-radius:13px;padding:4px 12px;font-size:12px;font-weight:700">103.0</span>
+        <span style="background:var(--blue);color:#fff;border-radius:13px;padding:4px 12px;font-size:12px;font-weight:700">103.8</span>
+        <span style="background:var(--blue);color:#fff;border-radius:13px;padding:4px 12px;font-size:12px;font-weight:700">87.5</span>
+        <span style="background:var(--blue);color:#fff;border-radius:13px;padding:4px 12px;font-size:12px;font-weight:700">98.1</span>
+        <span style="background:var(--blue);color:#fff;border-radius:13px;padding:4px 12px;font-size:12px;font-weight:700">90.1</span>
+      </div>
+    </div>
+    <div class="sgrid">
+      <a class="scard" href="https://it-it.facebook.com/radioascoli/" target="_blank"><svg viewBox="0 0 24 24" fill="#1877f2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>Facebook</span></a>
+      <a class="scard" href="https://www.instagram.com/radioascoli/" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg><span>Instagram</span></a>
+      <a class="scard" href="https://www.youtube.com/@RadioAscoliinTv" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.54C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="red"/></svg><span>YouTube</span></a>
+      <a class="scard" href="https://soundcloud.com/user-186724097" target="_blank"><svg viewBox="0 0 24 24" fill="#ff5500"><path d="M11.56 8.87V17h8.76c1.16-.01 2.1-.97 2.1-2.15 0-1.18-.95-2.14-2.12-2.14-.12 0-.23.01-.34.03.03-.18.05-.36.05-.55a4.41 4.41 0 0 0-4.4-4.41c-1.71 0-3.19 1-3.05-.91zM0 15a1 1 0 0 0 2 0v-4a1 1 0 0 0-2 0v4zm3.5 1a1 1 0 0 0 2 0v-6a1 1 0 0 0-2 0v6zm3.5.5a1 1 0 0 0 2 0V11a1 1 0 0 0-2 0v5.5z"/></svg><span>SoundCloud</span></a>
+    </div>
+    <div class="cftr">A&amp;P Media srl &bull; Reg. Trib. Ascoli Piceno n.151 del 05/03/1977<br>Dir. Resp.: Lanfranco Norcini Pala &bull; Tutti i diritti riservati</div>
+  </div>
+
+</div><!-- /screens -->
+
+<!-- PLAYER -->
+<div class="player">
+  <div class="eq off" id="eq"><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="pinfo">
+    <div class="ptitle" id="ptitle">Radio Ascoli &mdash; Tocca Play</div>
+    <div class="psub" id="psub">FM 103.0 &bull; Ascoli Piceno</div>
+  </div>
+  <input type="range" id="vol" min="0" max="1" step="0.05" value="0.9" style="width:46px;accent-color:var(--blue)">
+  <button class="playbtn" id="playbtn" onclick="toggle()">&#9654;</button>
+</div>
+
+<!-- READER PANEL -->
+<div class="reader" id="reader">
+  <div class="rbar">
+    <button class="rback" onclick="closeReader()">&#8592;</button>
+    <div class="rtitle" id="rtitle">Radio Ascoli</div>
+  </div>
+  <div class="rbody" id="rbody">
+    <div class="r-loading"><div class="spinner"></div>Caricamento articolo...</div>
+  </div>
+</div>
+
+<audio id="aud" preload="none"></audio>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ═══════════════════════════════════════
+//  CONFIGURAZIONE
+// ═══════════════════════════════════════
+var STREAM = 'https://ice09.fluidstream.net/fluid0909.mp3';
+
+// Feed RSS radioascoli.it tramite proxy CORS pubblico (rss2json converte RSS in JSON)
+var RSS_NEWS   = 'https://script.google.com/macros/s/AKfycbxBZihg4U2ZFlxm075-VIlmTHgBrmW4uCAhAVEKyzWFeOvZ7dMMgH282e-RJcdqiIA/exec?type=news';
+var RSS_PODS   = 'https://script.google.com/macros/s/AKfycbxBZihg4U2ZFlxm075-VIlmTHgBrmW4uCAhAVEKyzWFeOvZ7dMMgH282e-RJcdqiIA/exec?type=podcast';
+
+// Proxy CORS alternativo per caricare articoli completi
+var CORS_PROXY = 'https://script.google.com/macros/s/AKfycbxBZihg4U2ZFlxm075-VIlmTHgBrmW4uCAhAVEKyzWFeOvZ7dMMgH282e-RJcdqiIA/exec'; // Google Apps Script proxy
+
+
+// ── DATI EMBEDDED (fallback quando feed non disponibile) ──────────
+var FALLBACK_NEWS = [
+  {t:'Beni culturali: torna il corso per operatori volontari', x:"C'e' tempo fino al 17 aprile per iscriversi al corso della Diocesi di Ascoli Piceno.", d:'20 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/Museo-Diocesano-corso-beni-culturali-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/21/beni-culturali-ecclesiastici-torna-il-corso-per-operatori-volontari/', cats:['Cultura']},
+  {t:'A(p)puntino. Il nuovo residente con il muso lungo', x:'Gli avvistamenti di cinghiali in tutto il Piceno si sono ormai trasformati in appuntamenti quotidiani.', d:'20 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/cinghiali-citta-piceno-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/20/appuntino-quel-nuovo-residente-con-il-muso-lungo-e-il-pelo-sullo-stomaco/', cats:['Appuntino']},
+  {t:"Libreria Rinascita compie 50 anni", x:'La storica libreria ascolana festeggia il mezzo secolo con una serata dedicata a musica e lettura.', d:'20 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/rinascita-50-anni-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/20/libreria-rinascita-compie-50-anni-in-arrivo-lapp-per-lo-scambio-dei-libri/', cats:['Cultura']},
+  {t:"La Caritas che accoglie: 40 ucraini integrati", x:"L'accoglienza dei profughi ucraini ad Ascoli si e' trasformata in un percorso di integrazione.", d:'19 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/accoglienza-ucraini-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/19/la-caritas-che-accoglie-dallemergenza-allintegrazione-per-40-ucraini/', cats:['Societa']},
+  {t:'Commercio Ascoli: aumentano le chiusure', x:'Difficolta per le attivita economiche: caro-affitti e commercio online cambiano il volto della citta.', d:'18 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/chiusura-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/18/commercio-ascoli-aumentano-le-chiusure-cresce-solo-il-food/', cats:['Economia']},
+  {t:'Laboratori didattici solidali per bambini immigrati', x:"I Laboratori Caritas permettono a 150 bambini di avere supporto scolastico grazie ai fondi dell'8Xmille.", d:'17 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/28pol3-scuola-bambini-immigrati-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/17/laboratori-didattici-solidali-sostegno-concreto-per-bambini-immigrati/', cats:['Scuola']},
+  {t:"L'orto in casa, una passione in crescita nel Piceno", x:'Coltivare in appartamento: risparmio e consapevolezza alimentare sempre piu diffusi.', d:'16 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/Orto-Invernale-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/16/lorto-in-casa-una-passione-in-crescita-anche-nel-piceno/', cats:['Lifestyle']},
+  {t:'Nasce il centro Madre Antonia delle Suore Oblate', x:'Nato a San Benedetto del Tronto il centro diurno per donne in situazione di vulnerabilita.', d:'13 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/Violenza-Donne-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/13/donne-a-rischio-di-sfruttamento-nasce-il-centro-madre-antonia-delle-suore-oblate/', cats:['Societa']},
+  {t:'A San Benedetto il campionato delle autocandidature', x:'La corsa a sindaco a San Benedetto del Tronto: tanti candidati, nessuna squadra ancora formata.', d:'13 Mar 2026', i:'https://www.radioascoli.it/wp-content/uploads/2026/03/appuntino-400x250.jpg', l:'https://www.radioascoli.it/indexphp/2026/03/13/appuntino-al-via-a-san-benedetto-un-altro-campionato-quello-delle-autocandidature/', cats:['Politica']}
+];
+
+var FALLBACK_PODS = [
+  {t:'Il circo-lo del giovedi', d:"Temi al centro dell'arena. Conducono Alberto Vitelli, Armando Giampieri e Tonino Sofia.", i:'https://www.radioascoli.it/wp-content/uploads/2026/01/circolo-giovedi-2.jpg', l:'https://www.radioascoli.it/index.php/tutti-i-podcast/il-circo-lo-del-giovedi/', cats:['Podcast']},
+  {t:'Zona mista', d:'Il calcio Piceno a tutto campo. Conduce Mario La Rocca.', i:'https://www.radioascoli.it/wp-content/uploads/2025/10/pallone-in-rete-2-quadrato.jpg', l:'https://www.radioascoli.it/index.php/tutti-i-podcast/zona-mista/', cats:['Podcast']},
+  {t:'La tela dei temi', d:'Un convegno alla volta. Fili e nodi della societa in discussione.', i:'https://www.radioascoli.it/wp-content/uploads/2025/10/tela-temi-icona.jpg', l:'https://www.radioascoli.it/index.php/tutti-i-podcast/la-tela-dei-temi/', cats:['Podcast']},
+  {t:'A(p)puntino', d:'La nota del Direttore Lanfranco Norcini Pala.', i:'https://www.radioascoli.it/wp-content/uploads/2025/09/appuntino-rid.jpg', l:'https://www.radioascoli.it/index.php/tutti-i-podcast/a(p)puntino/', cats:['Podcast']},
+  {t:'Diario da Gaza', d:'La testimonianza dei medici dalla Clinica di Emergency a Gaza.', i:'https://www.radioascoli.it/wp-content/uploads/2025/07/gaza.jpg', l:'https://www.radioascoli.it/index.php/tutti-i-podcast/diario-da-gaza/', cats:['Podcast']},
+  {t:'Domenica Cuore della Comunita', d:'Riflessione sul Vangelo della domenica. A cura di Suor Sophia Gitahi.', i:'https://www.radioascoli.it/wp-content/uploads/2024/11/Podcast-Domenica-cuore-della-comunita.jpg', l:'https://www.radioascoli.it/index.php/tutti-i-podcast/domenica-cuore-della-comunita/', cats:['Podcast']},
+  {t:"Nel nome di Sant Emidio", d:'Racconti sul Santo Patrono di Ascoli Piceno.', i:'https://www.radioascoli.it/wp-content/uploads/2025/07/emidio-rid.jpg', l:'https://www.radioascoli.it/index.php/tutti-i-podcast/nel-nome-di-santemidio/', cats:['Podcast']}
+];
+
+var SCHED = [
+  {t:'08:30',n:'Rassegna Stampa'},{t:'09:00',n:'InBlu Notizie'},{t:'09:30',n:'Rassegna Stampa'},
+  {t:'10:00',n:'InBlu Notizie'},{t:'10:15',n:'Mattinata InBlu'},{t:'11:00',n:'InBlu Notizie'},
+  {t:'11:30',n:'Radio Ascoli Notizie'},{t:'12:00',n:'InBlu Notizie'},{t:'12:15',n:'Realta Locali'},
+  {t:'13:00',n:'InBlu Notizie'},{t:'15:00',n:'InBlu Notizie'},{t:'16:00',n:'Radio Ascoli Notizie'},
+  {t:'17:00',n:'Realta Locali'},{t:'18:00',n:'InBlu Notizie'},{t:'20:00',n:'Musica'},{t:'22:00',n:'Notte in Musica'}
+];
+
+// Cache in memoria
+var cache = { news: null, pods: null };
+
+// ═══════════════════════════════════════
+//  RSS FETCH
+// ═══════════════════════════════════════
+function fetchRSS(url, cb) {
+  // Google Apps Script a volte richiede un secondo tentativo dopo il redirect
+  function doFetch(attempt) {
+    fetch(url + '&t=' + Date.now(), {
+      redirect: 'follow',
+      mode: 'cors',
+      cache: 'no-cache'
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      if (data && data.ok && data.items && data.items.length > 0) {
+        cb(null, data.items);
+      } else if (attempt < 2) {
+        setTimeout(function(){ doFetch(attempt + 1); }, 1500);
+      } else {
+        cb('Proxy non disponibile');
+      }
+    })
+    .catch(function(e) {
+      if (attempt < 2) {
+        setTimeout(function(){ doFetch(attempt + 1); }, 2000);
+      } else {
+        cb(e.message || 'Errore di rete');
+      }
+    });
+  }
+  doFetch(0);
+}
+
+function parseItem(item) {
+  // Estrae immagine - il GAS restituisce item.image direttamente
+  var img = item.image || '';
+  if (!img && item.enclosure && item.enclosure.link) img = item.enclosure.link;
+  if (!img && item.thumbnail) img = item.thumbnail;
+  if (!img) {
+    var m = (item.content || item.description || '').match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (m) img = m[1];
+  }
+  // Testo estratto dal description/content
+  var desc = (item.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g,' ').trim().slice(0,200);
+  return {
+    t: item.title || '',
+    d: item.pubDate ? formatDate(item.pubDate) : '',
+    i: img,
+    l: item.link || '',
+    x: desc,
+    content: item.content || item.description || '',  // contiene iframe SoundCloud
+    cats: item.categories || []
+  };
+}
+
+// ═══════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════
+var aud = document.getElementById('aud');
+var eq = document.getElementById('eq');
+var ptitle = document.getElementById('ptitle');
+var psub = document.getElementById('psub');
+var playbtn = document.getElementById('playbtn');
+var bigplay = document.getElementById('bigplay');
+var vol = document.getElementById('vol');
+var isPlaying = false, retN = 0, retT = null;
+
+aud.volume = parseFloat(vol.value);
+vol.oninput = function() { aud.volume = parseFloat(vol.value); };
+
+function setUI(p, t, s) {
+  isPlaying = p;
+  var icon = p ? '&#9646;&#9646;' : '&#9654;';
+  playbtn.innerHTML = icon;
+  if (bigplay) bigplay.innerHTML = icon;
+  eq.classList.toggle('off', !p);
+  if (t) ptitle.textContent = t;
+  if (s) psub.textContent = s;
+}
+
+function clearRetry() { if (retT) { clearTimeout(retT); retT = null; } }
+
+function doRetry() {
+  if (retN >= 10) { setUI(false, 'Radio Ascoli', 'Connessione non riuscita. Riprova.'); return; }
+  retN++;
+  psub.textContent = 'Riconnessione ' + retN + '/10...';
+  retT = setTimeout(function() {
+    aud.src = STREAM + '?r=' + Date.now();
+    aud.load();
+    aud.play().then(function() { retN=0; setUI(true,'Radio Ascoli - Diretta','FM 103.0'); }).catch(doRetry);
+  }, Math.min(2000 * retN, 12000));
+}
+
+function play() {
+  clearRetry(); retN = 0;
+  setUI(false, 'Radio Ascoli - Diretta', 'Connessione in corso...');
+  aud.src = STREAM + '?r=' + Date.now();
+  aud.load();
+  function tryP(n) {
+    aud.play()
+      .then(function() { setUI(true, 'Radio Ascoli - Diretta', 'FM 103.0 - Ascoli Piceno'); })
+      .catch(function(e) { if (n < 3) setTimeout(function(){tryP(n+1);}, 1000); else doRetry(); });
+  }
+  tryP(1);
+}
+
+function toggle() {
+  if (!isPlaying) play();
+  else { clearRetry(); aud.pause(); setUI(false,'Radio Ascoli','FM 103.0 - Ascoli Piceno'); }
+}
+
+aud.addEventListener('playing', function() { setUI(true,'Radio Ascoli - Diretta','FM 103.0 - Ascoli Piceno'); });
+aud.addEventListener('waiting', function() { if(isPlaying) psub.textContent='Buffering...'; });
+aud.addEventListener('stalled', function() { if(isPlaying){psub.textContent='Buffering...'; setTimeout(function(){if(isPlaying&&aud.paused)doRetry();},5000);} });
+aud.addEventListener('error',   function() { if(isPlaying) doRetry(); });
+aud.addEventListener('ended',   function() { if(isPlaying) doRetry(); });
+aud.addEventListener('pause',   function() { if(!retT) setUI(false); });
+document.addEventListener('visibilitychange', function() { if(!document.hidden&&isPlaying&&aud.paused) aud.play().catch(doRetry); });
+
+// ═══════════════════════════════════════
+//  NAVIGAZIONE
+// ═══════════════════════════════════════
+var rendered = {};
+function go(name, btn) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('on'); });
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('on'); });
+  document.getElementById('s-' + name).classList.add('on');
+  if (btn) btn.classList.add('on');
+  if (!rendered[name]) { rendered[name] = true; render(name); }
+}
+
+function render(name) {
+  if (name === 'home')     renderHome();
+  if (name === 'notizie')  renderNotizie();
+  if (name === 'podcast')  renderPodcast();
+  if (name === 'diretta')  renderSched();
+}
+
+// ═══════════════════════════════════════
+//  RENDER HOME
+// ═══════════════════════════════════════
+function renderHome() {
+  // Mostra subito i fallback, poi aggiorna con dati live
+  if (cache.news) { buildHomeNews(cache.news); return; }
+  buildHomeNews(FALLBACK_NEWS);
+  fetchRSS(RSS_NEWS, function(err, items) {
+    if (!err && items && items.length) {
+      cache.news = items.map(parseItem);
+      buildHomeNews(cache.news);
+      // Aggiorna anche notizie se gia' aperte
+      if (document.getElementById('newsList').children.length > 0) {
+        buildNewsList(cache.news);
+      }
+    }
+    // Su errore teniamo i fallback - silenziosamente
+  });
+}
+
+function buildHomeNews(items) {
+  var h = '';
+  items.slice(0, 3).forEach(function(n, i) {
+    h += '<div class="ncard" onclick="openReader(' + i + ',\'news\')">';
+    if (n.i) h += '<img class="ncard-img" src="' + esc(n.i) + '" loading="lazy" onerror="this.className=\'ncard-ph\';this.removeAttribute(\'src\')">';
+    else h += '<div class="ncard-ph">&#128240;</div>';
+    h += '<div class="ncard-body">';
+    if (n.cats.length) h += '<div class="ncard-cat">' + esc(n.cats[0]) + '</div>';
+    h += '<div class="ncard-date">' + n.d + '</div>';
+    h += '<div class="ncard-title">' + esc(n.t) + '</div>';
+    h += '<div class="ncard-exc">' + esc(n.x) + '</div>';
+    h += '<span class="ncard-more">Leggi tutto &rarr;</span></div></div>';
+  });
+  document.getElementById('homeNews').innerHTML = h;
+}
+
+// ═══════════════════════════════════════
+//  RENDER NOTIZIE
+// ═══════════════════════════════════════
+function renderNotizie() {
+  if (cache.news) { buildNewsList(cache.news); return; }
+  // Mostra fallback subito (cliccabili)
+  buildNewsList(FALLBACK_NEWS);
+  fetchRSS(RSS_NEWS, function(err, items) {
+    if (!err && items && items.length) {
+      cache.news = items.map(parseItem);
+      buildNewsList(cache.news);
+    }
+  });
+}
+
+function buildNewsList(items) {
+  var h = '';
+  items.forEach(function(n, i) {
+    h += '<div class="ni" onclick="openReader(' + i + ',\'news\')">';
+    if (n.i) h += '<img class="ni-img" src="' + esc(n.i) + '" loading="lazy" onerror="this.outerHTML=\'<div class=ni-ph>&#128240;</div>\'">';
+    else h += '<div class="ni-ph">&#128240;</div>';
+    h += '<div class="ni-body"><div class="ni-date">' + n.d + '</div>';
+    h += '<div class="ni-title">' + esc(n.t) + '</div>';
+    h += '<div class="ni-exc">' + esc(n.x) + '</div></div></div>';
+  });
+  document.getElementById('newsList').innerHTML = h;
+}
+
+// ═══════════════════════════════════════
+//  RENDER PODCAST
+// ═══════════════════════════════════════
+function renderPodcast() {
+  // I podcast sono i 7 programmi fissi (Il circo-lo, Zona mista, ecc.)
+  // Non usiamo il feed RSS per i podcast - usiamo la lista fissa dei programmi
+  if (cache.pods) { buildPodList(cache.pods); return; }
+  cache.pods = FALLBACK_PODS;
+  buildPodList(cache.pods);
+}
+
+function buildPodList(items) {
+  var h = '';
+  items.forEach(function(p, i) {
+    h += '<div class="pod" onclick="openReader(' + i + ',\'pod\')">';
+    if (p.i) h += '<img class="pod-img" src="' + esc(p.i) + '" loading="lazy" onerror="this.outerHTML=\'<div class=pod-ph>&#127897;</div>\'">';
+    else h += '<div class="pod-ph">&#127897;</div>';
+    h += '<div class="pod-body"><div class="pod-title">' + esc(p.t) + '</div>';
+    h += '<div class="pod-desc">' + esc(p.x) + '</div>';
+    h += '<button class="pod-btn">&#9654; Ascolta</button></div></div>';
+  });
+  document.getElementById('podList').innerHTML = h;
+}
+
+// ═══════════════════════════════════════
+//  PALINSESTO
+// ═══════════════════════════════════════
+function renderSched() {
+  var now = new Date(), nm = now.getHours()*60+now.getMinutes(), h = '';
+  SCHED.forEach(function(s, i) {
+    var p = s.t.split(':'), st = parseInt(p[0])*60+parseInt(p[1]);
+    var nx = SCHED[i+1], en = nx ? (parseInt(nx.t.split(':')[0])*60+parseInt(nx.t.split(':')[1])) : 1440;
+    var cur = nm >= st && nm < en;
+    h += '<div class="sched-item' + (cur?' cur':'') + '">';
+    h += '<div class="sched-t">' + s.t + (cur?' ●':'') + '</div>';
+    h += '<div class="sched-n">' + s.n + '</div></div>';
+  });
+  document.getElementById('sched').innerHTML = h;
+}
+
+// ═══════════════════════════════════════
+//  READER - legge articolo dentro l'app
+// ═══════════════════════════════════════
+function openReader(idx, type) {
+  var items = type === 'news' ? cache.news : cache.pods;
+  var fallback = type === 'news' ? FALLBACK_NEWS : FALLBACK_PODS;
+  var item = (items && items[idx]) ? items[idx] : fallback[idx];
+  if (!item) return;
+  // Podcast: apri pagina programma con lista puntate
+  if (type === 'pod') { openPodcastProgram(item); return; }
+
+  document.getElementById('rtitle').textContent = item.t || item.title || '';
+  document.getElementById('reader').classList.add('on');
+
+  // Se l'item ha contenuto completo (dal GAS), mostralo subito
+  if (item.content && item.content.length > 200) {
+    renderArticleFallback(item, type);
+  } else {
+    // Mostra spinner e aspetta che il feed sia carico
+    document.getElementById('rbody').innerHTML = '<div class="r-loading"><div class="spinner"></div>Caricamento...</div>';
+    // Riprova dopo un momento (il feed potrebbe ancora caricarsi)
+    var attempts = 0;
+    function tryLoad() {
+      attempts++;
+      var liveItems = type === 'news' ? cache.news : cache.pods;
+      var liveItem = liveItems && liveItems[idx];
+      if (liveItem && liveItem.content && liveItem.content.length > 200) {
+        renderArticleFallback(liveItem, type);
+      } else if (attempts < 8) {
+        setTimeout(tryLoad, 800);
+      } else {
+        // Mostra quello che abbiamo
+        renderArticleFallback(item, type);
+      }
+    }
+    setTimeout(tryLoad, 500);
+  }
+}
+
+function renderArticle(item, html, type) {
+  // Estrai solo il contenuto principale dalla pagina
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(html, 'text/html');
+
+  // Rimuovi elementi inutili (ma NON gli iframe - servono per SoundCloud/YouTube)
+  ['script','style','nav','header','footer','.site-header','.site-footer',
+   '.sidebar','aside','.wp-block-group.alignfull','.related-posts',
+   '.comments-area','#comments','.sharedaddy','.jp-relatedposts'].forEach(function(sel) {
+    doc.querySelectorAll(sel).forEach(function(el){ el.remove(); });
+  });
+
+  // Cerca il contenuto dell'articolo
+  var content = doc.querySelector('.entry-content, .post-content, article .content, .article-content, main article');
+  var bodyHtml = '';
+
+  if (content) {
+    // Rendi le immagini responsive e rimuovi link esterni
+    content.querySelectorAll('img').forEach(function(img) {
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.borderRadius = '4px';
+      img.removeAttribute('width');
+      img.removeAttribute('height');
+      img.setAttribute('loading', 'lazy');
+    });
+    // Make iframes (SoundCloud, YouTube) responsive
+    content.querySelectorAll('iframe').forEach(function(fr) {
+      fr.style.width = '100%';
+      fr.style.maxWidth = '100%';
+      fr.style.border = 'none';
+      fr.style.borderRadius = '8px';
+      fr.removeAttribute('width');
+      fr.removeAttribute('height');
+      fr.setAttribute('allowfullscreen', '');
+    });
+    content.querySelectorAll('a').forEach(function(a) {
+      a.setAttribute('target', '_blank');
+    });
+    bodyHtml = content.innerHTML;
+  } else {
+    // Fallback al contenuto RSS
+    bodyHtml = cleanHtml(item.content || item.x);
+  }
+
+  buildReaderDOM(item, bodyHtml, type);
+}
+
+function buildSCPlayer(trackUrl, title) {
+  // SoundCloud Widget API ufficiale
+  // Per URL con secret_token (es. /s-XXXXX) bisogna passare l'URL intero come parametro
+  // Il secret_token va incluso nell'URL passato al player
+  var embedSrc = 'https://w.soundcloud.com/player/?url=' +
+    encodeURIComponent(trackUrl) +
+    '&color=%2329ABE2&auto_play=false&hide_related=true' +
+    '&show_comments=false&show_user=false&show_reposts=false&show_teaser=false';
+  return '<div style="margin:14px 0">' +
+    '<iframe width="100%" height="166" scrolling="no" frameborder="no" ' +
+    'allow="autoplay" allowtransparency="true" ' +
+    'style="border:none;border-radius:8px;display:block;width:100%" ' +
+    'src="' + embedSrc + '"></iframe></div>';
+}
+
+function extractSoundCloudLinks(html) {
+  var links = [];
+  // Prova 1: estrai iframe SoundCloud con src originale (ha gia il secret_token)
+  var iframeRe = new RegExp('<iframe[^>]+src=["\'](' +
+    'https://w\\.soundcloud\\.com/player/[^"\'>]+)["\'][^>]*>', 'gi');
+  var m;
+  while ((m = iframeRe.exec(html)) !== null) {
+    var src = m[1].replace(/&#038;/g, '&');
+    var after = html.substring(m.index, m.index + 800);
+    var titleM = after.match(/title=["']([^"']+)["'][^>]*>[^<]*<\/a>/);
+    var title = titleM ? titleM[1] : 'Ascolta';
+    links.push({ src: src, title: title, hasIframe: true });
+  }
+  // Prova 2: link href con traccia specifica
+  if (links.length === 0) {
+    var hrefRe = new RegExp(
+      'href=["\']' +
+      '(https://soundcloud\\.com/user-186724097/[^"\'/][^"\']*)' +
+      '["\'][^>]*title=["\']([^"\']*)' +
+      '["\']', 'gi');
+    while ((m = hrefRe.exec(html)) !== null) {
+      links.push({ src: null, url: m[1], title: m[2], hasIframe: false });
+    }
+  }
+  var seen = {};
+  return links.filter(function(l) {
+    var key = l.src || l.url;
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+
+function renderArticleFallback(item, type) {
+  var raw = item.content || item.x || '';
+
+  // Estrai link SoundCloud prima di rimuovere il markup
+  var scLinks = extractSoundCloudLinks(raw);
+
+  var bodyHtml = raw
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    // Rimuovi completamente gli iframe SoundCloud (li sostituiamo con pulsanti)
+    .replace(/<iframe[^>]*soundcloud[^>]*>[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<iframe[^>]*soundcloud[^>]*\/>/gi, '')
+    // Rimuovi div SoundCloud di credito/firma
+    .replace(/<div[^>]*font-size: 10px[^>]*>[\s\S]*?<\/div>/gi, '')
+    // Rendi immagini responsive
+    .replace(/<img([^>]*?)>/gi, function(_, a){
+      a = a.replace(/\s(width|height)=["'][^"']*["']/gi, '');
+      return '<img' + a + ' style="max-width:100%;height:auto;border-radius:4px;margin:8px 0">';
+    })
+    // Rimuovi spacer vuoti
+    .replace(/<div[^>]*wp-block-spacer[^>]*>[\s\S]*?<\/div>/gi, '');
+
+  // Costruisci player SoundCloud per ogni traccia
+  var scHtml = '';
+  if (scLinks.length > 0) {
+    scHtml += '<div style="margin:16px 0">';
+    scLinks.forEach(function(sc) {
+      if (sc.hasIframe && sc.src) {
+        // Usa il src originale dell'iframe - contiene gia' il secret_token corretto
+        scHtml += '<div style="margin:14px 0">' +
+          '<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" ' +
+          'allowtransparency="true" ' +
+          'style="border:none;border-radius:8px;display:block;width:100%" ' +
+          'src="' + sc.src + '"></iframe></div>';
+      } else {
+        scHtml += buildSCPlayer(sc.url, sc.title);
+      }
+    });
+    scHtml += '</div>';
+  }
+
+  if (!bodyHtml.trim() && scLinks.length === 0) bodyHtml = '<p>' + (item.x || '') + '</p>';
+
+  buildReaderDOM(item, bodyHtml, type, scHtml);
+}
+
+function cleanHtml(raw) {
+  // Pulisce HTML grezzo dal RSS: rimuove script, style, commenti
+  return (raw || '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\/?(?:div|section|aside|nav|header|footer|form)[^>]*>/gi, '')
+    .trim();
+}
+
+function buildReaderDOM(item, bodyHtml, type, scHtml) {
+  scHtml = scHtml || '';
+  var h = '';
+  if (item.i) h += '<img class="r-cover" src="' + esc(item.i) + '" onerror="this.outerHTML=\'<div class=r-cover-ph>&#128240;</div>\'">';
+  else h += '<div class="r-cover-ph">&#128240;</div>';
+  h += '<div class="r-content">';
+  if (item.cats && item.cats.length) h += '<div class="r-cat">' + esc(item.cats[0]) + '</div>';
+  h += '<div class="r-date">' + item.d + '</div>';
+  h += '<div class="r-title">' + esc(item.t) + '</div>';
+  if (type === 'pod') {
+    h += '<div class="r-pod-box">';
+    h += '<p>' + esc(item.x) + '</p>';
+    h += '<button class="r-pod-play" onclick="play()">&#9654; Ascolta Radio Ascoli Live</button>';
+    h += '</div>';
+  }
+  h += '<div class="r-body">' + bodyHtml + '</div>';
+  if (scHtml) h += scHtml;
+  h += '</div>';
+
+  var rbody = document.getElementById('rbody');
+  rbody.innerHTML = h;
+  rbody.scrollTop = 0;
+}
+
+// ── PODCAST PROGRAM VIEWER ───────────────────────────────────────────────────
+function openPodcastProgram(prog) {
+  document.getElementById('rtitle').textContent = prog.t || prog.title || 'Podcast';
+  document.getElementById('rbody').innerHTML =
+    '<div class="r-loading"><div class="spinner"></div>Caricamento puntate...</div>';
+  document.getElementById('reader').classList.add('on');
+
+  var link = prog.l || prog.link || '';
+  if (!CORS_PROXY || !link) {
+    renderPodcastFallback(prog);
+    return;
+  }
+
+  fetch(CORS_PROXY + '?action=podcast&url=' + encodeURIComponent(link), {redirect:'follow'})
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data && data.ok && data.episodes && data.episodes.length > 0) {
+        renderPodcastEpisodes(prog, data.episodes);
+      } else {
+        renderPodcastFallback(prog);
+      }
+    })
+    .catch(function(){ renderPodcastFallback(prog); });
+}
+
+function renderPodcastEpisodes(prog, episodes) {
+  var title = prog.t || prog.title || '';
+  var desc  = prog.d || prog.description || '';
+  var img   = prog.i || prog.image || '';
+
+  var h = '';
+  if (img) h += '<img class="r-cover" src="' + img + '">';
+  h += '<div class="r-content">';
+  h += '<div class="r-cat">Podcast</div>';
+  h += '<div class="r-title">' + title + '</div>';
+  if (desc) h += '<div class="r-body" style="margin-bottom:16px"><p>' + desc + '</p></div>';
+  h += '</div>';
+
+  // Lista puntate con player SoundCloud embed
+  episodes.forEach(function(ep) {
+
+    h += '<div style="padding:12px 16px;border-bottom:1px solid #e0e0e0">';
+    if (ep.date) h += '<div style="font-size:11px;font-weight:700;color:#29ABE2;margin-bottom:6px">' + ep.date + '</div>';
+    h += '<div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:8px">' + ep.title + '</div>';
+    // Usa iframe SoundCloud solo per tracce specifiche (non per link al profilo)
+    if (ep.soundcloudUrl && ep.soundcloudUrl.split('/').length >= 5) {
+      h += buildSCPlayer(ep.soundcloudUrl, ep.title);
+    } else {
+      // Fallback pulsante se il link non è una traccia specifica
+      h += '<a href="https://soundcloud.com/user-186724097" target="_blank" style="' +
+           'display:flex;align-items:center;gap:10px;background:#ff5500;color:#fff;' +
+           'text-decoration:none;border-radius:8px;padding:12px 16px;margin-bottom:4px;font-size:13px;font-weight:700">' +
+           '<span>&#9654;</span><span>' + ep.title + ' &mdash; Ascolta su SoundCloud</span></a>';
+    }
+    h += '</div>';
+  });
+
+  var rbody = document.getElementById('rbody');
+  rbody.innerHTML = h;
+  rbody.scrollTop = 0;
+}
+
+function renderPodcastFallback(prog) {
+  var title = prog.t || prog.title || '';
+  var desc  = prog.d || prog.description || '';
+  var img   = prog.i || prog.image || '';
+  var link  = prog.l || prog.link || '';
+
+  var h = '';
+  if (img) h += '<img class="r-cover" src="' + img + '">';
+  h += '<div class="r-content">';
+  h += '<div class="r-cat">Podcast</div>';
+  h += '<div class="r-title">' + title + '</div>';
+  if (desc) h += '<div class="r-body"><p>' + desc + '</p></div>';
+  h += '</div>';
+  if (link) h += '<div class="d-cta" style="padding:16px"><a href="' + link + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#29ABE2;color:#fff;text-decoration:none;border-radius:4px;padding:13px 24px;font-size:14px;font-weight:700">&#127897; Ascolta le puntate sul sito</a></div>';
+
+  var rbody = document.getElementById('rbody');
+  rbody.innerHTML = h;
+  rbody.scrollTop = 0;
+}
+
+function closeReader() {
+  document.getElementById('reader').classList.remove('on');
+}
+
+// Swipe a destra per chiudere reader
+var _tx = 0;
+document.getElementById('reader').addEventListener('touchstart', function(e){ _tx = e.touches[0].clientX; }, {passive:true});
+document.getElementById('reader').addEventListener('touchend', function(e){ if(e.changedTouches[0].clientX - _tx > 70) closeReader(); }, {passive:true});
+
+// ═══════════════════════════════════════
+//  FORM
+// ═══════════════════════════════════════
+document.querySelectorAll('.ftab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.ftab').forEach(function(t){ t.classList.remove('on'); });
+    document.querySelectorAll('.fform').forEach(function(f){ f.classList.remove('on'); });
+    this.classList.add('on');
+    var f = document.getElementById('f-' + this.dataset.f);
+    if (f) f.classList.add('on');
+  });
+});
+
+document.querySelectorAll('input[name="a_ded"]').forEach(function(r) {
+  r.addEventListener('change', function() {
+    document.getElementById('a_ded_box').style.display = this.value === 'si' ? 'block' : 'none';
+  });
+});
+
+function cc(tid, cid, max) {
+  var el=document.getElementById(tid), c=document.getElementById(cid);
+  if(el&&c) c.textContent = el.value.length+'/'+max;
+}
+
+function getv(id) {
+  var el = document.getElementById(id);
+  if (!el) return '';
+  if (el.type==='checkbox') return el.checked?'SI':'';
+  return el.value.trim();
+}
+
+function buildBody(id) {
+  var maps = {
+    ascolta:[['Nome','a_nome'],['Canzone/Artista','a_canz'],['Dedica a','a_dest'],['Messaggio','a_msg']],
+    pub:[['Nome','p_nome'],['Cognome','p_cog'],['Azienda','p_az'],['Email','p_email'],['Telefono','p_tel'],['Spot','p_spot'],['Sponsorizzazione','p_spon'],['Pubbliredazionale','p_pub']],
+    altro:[['Nome','o_nome'],['Cognome','o_cog'],['Email','o_email'],['Tipo','o_tipo'],['Messaggio','o_msg']]
+  };
+  return (maps[id]||[]).map(function(m){ var v=getv(m[1]); return v?m[0]+': '+v:''; }).filter(Boolean).join('\n');
+}
+
+var FREQS = { ascolta:['a_nome','a_canz','a_priv'], pub:['p_nome','p_cog','p_az','p_email','p_tel','p_priv'], altro:['o_nome','o_cog','o_email','o_tipo','o_msg','o_priv'] };
+var SUBJ  = { ascolta:'Richiesta musicale - Radio Ascoli App', pub:'Richiesta pubblicitaria - Radio Ascoli App', altro:'Richiesta generica - Radio Ascoli App' };
+var DEST  = { ascolta:'redazione@radioascoli.it', pub:'commerciale@radioascoli.it', altro:'redazione@radioascoli.it' };
+
+function sub(id) {
+  var fb = document.getElementById('fm-'+id), ok = true;
+  (FREQS[id]||[]).forEach(function(fid){
+    var el=document.getElementById(fid); if(!el)return;
+    if(el.type==='checkbox'&&!el.checked) ok=false;
+    else if(el.type!=='checkbox'&&!el.value.trim()) ok=false;
+  });
+  if (!ok) { fb.textContent='Compila tutti i campi obbligatori (*).'; fb.className='fmsg err'; fb.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  window.location.href = 'mailto:'+DEST[id]+'?subject='+encodeURIComponent(SUBJ[id])+'&body='+encodeURIComponent(buildBody(id));
+  fb.textContent="Il client email si sta aprendo con il messaggio precompilato.";
+  fb.className='fmsg ok'; fb.scrollIntoView({behavior:'smooth',block:'center'});
+  document.querySelectorAll('#f-'+id+' input:not([type=radio]):not([type=checkbox]),#f-'+id+' select,#f-'+id+' textarea').forEach(function(el){el.value='';});
+  document.querySelectorAll('#f-'+id+' input[type=checkbox]').forEach(function(el){el.checked=false;});
+  setTimeout(function(){fb.className='fmsg';},10000);
+}
+
+// ═══════════════════════════════════════
+
+function formatDate(s) {
+  if (!s) return '';
+  try {
+    var d = new Date(s);
+    if (isNaN(d)) return s;
+    return d.toLocaleDateString('it-IT', {day:'numeric', month:'short', year:'numeric'});
+  } catch(e) { return s; }
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function errBox(msg, retry) {
+  var id = 'err_' + Date.now();
+  setTimeout(function(){ var b=document.getElementById(id); if(b) b.onclick=retry; }, 100);
+  return '<div class="error-box"><div class="icon">&#128246;</div><p>' + msg + '<br>Controlla la connessione e riprova.</p><button class="retry-btn" id="' + id + '">Riprova</button></div>';
+}
+
+// Precarica il feed subito all'avvio - cosi' quando si tocca una card i dati sono pronti
+fetchRSS(RSS_NEWS, function(err, items) {
+  if (!err && items && items.length) {
+    cache.news = items.map(parseItem);
+  }
+  rendered['home'] = true;
+  renderHome();
+});
+
+// Podcast: usa lista fissa dei 7 programmi
+cache.pods = FALLBACK_PODS;
+renderSched();
+</script>
+</body>
+</html>
