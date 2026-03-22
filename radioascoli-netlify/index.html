@@ -468,11 +468,11 @@ nav button.on{color:var(--blue);border-bottom-color:var(--blue)}
 var STREAM = 'https://ice09.fluidstream.net/fluid0909.mp3';
 
 // Feed RSS radioascoli.it tramite proxy CORS pubblico (rss2json converte RSS in JSON)
-var RSS_NEWS   = '/api/feed?type=news';
-var RSS_PODS   = '/api/feed?type=podcast';
+var RSS_NEWS   = 'https://script.google.com/macros/s/AKfycbxBZihg4U2ZFlxm075-VIlmTHgBrmW4uCAhAVEKyzWFeOvZ7dMMgH282e-RJcdqiIA/exec?type=news';
+var RSS_PODS   = 'https://script.google.com/macros/s/AKfycbxBZihg4U2ZFlxm075-VIlmTHgBrmW4uCAhAVEKyzWFeOvZ7dMMgH282e-RJcdqiIA/exec?type=podcast';
 
 // Proxy CORS alternativo per caricare articoli completi
-var CORS_PROXY = '/api/feed'; // Netlify Function
+var CORS_PROXY = 'https://script.google.com/macros/s/AKfycbxBZihg4U2ZFlxm075-VIlmTHgBrmW4uCAhAVEKyzWFeOvZ7dMMgH282e-RJcdqiIA/exec'; // Google Apps Script proxy
 
 
 // ── DATI EMBEDDED (fallback quando feed non disponibile) ──────────
@@ -513,19 +513,23 @@ var cache = { news: null, pods: null };
 //  RSS FETCH
 // ═══════════════════════════════════════
 function fetchRSS(url, cb) {
-  fetch(url, { cache: 'no-cache' })
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(data) {
+  // Usa XMLHttpRequest per gestire i redirect di Google Apps Script su Android
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url + '&t=' + Date.now(), true);
+  xhr.timeout = 15000;
+  xhr.onload = function() {
+    try {
+      var data = JSON.parse(xhr.responseText);
       if (data && data.ok && data.items && data.items.length > 0) {
         cb(null, data.items);
       } else {
         cb('Nessun contenuto');
       }
-    })
-    .catch(function(e) { cb(e.message || 'Errore di rete'); });
+    } catch(e) { cb('Risposta non valida'); }
+  };
+  xhr.onerror = function() { cb('Errore di rete'); };
+  xhr.ontimeout = function() { cb('Timeout'); };
+  xhr.send();
 }
 
 function parseItem(item) {
@@ -824,6 +828,21 @@ function renderArticle(item, html, type) {
   buildReaderDOM(item, bodyHtml, type);
 }
 
+function fetchXHR(url) {
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now(), true);
+    xhr.timeout = 15000;
+    xhr.onload = function() {
+      try { resolve(JSON.parse(xhr.responseText)); }
+      catch(e) { reject(new Error('Parse error')); }
+    };
+    xhr.onerror = function() { reject(new Error('Network error')); };
+    xhr.ontimeout = function() { reject(new Error('Timeout')); };
+    xhr.send();
+  });
+}
+
 function buildSCPlayer(trackUrl, title) {
   // SoundCloud Widget API ufficiale
   // Per URL con secret_token (es. /s-XXXXX) bisogna passare l'URL intero come parametro
@@ -966,7 +985,6 @@ function openPodcastProgram(prog) {
   }
 
   fetch('/api/feed?action=podcast&url=' + encodeURIComponent(link))
-    .then(function(r){ return r.json(); })
     .then(function(data){
       if (data && data.ok && data.episodes && data.episodes.length > 0) {
         renderPodcastEpisodes(prog, data.episodes);
